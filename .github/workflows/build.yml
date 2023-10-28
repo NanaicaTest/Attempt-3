@@ -34,9 +34,6 @@ jobs:
 
       - name: Patch
         run: ./gradlew applyPatches --stacktrace
-        
-      - name: Build
-        run: ./gradlew build --stacktrace
 
       - name: Create Reobf Jar
         run: ./gradlew createReobfPaperclipJar --stacktrace
@@ -55,7 +52,7 @@ jobs:
         if: github.ref_name == env.branch
         uses: marvinpinto/action-automatic-releases@latest
         with:
-          title: "Release #${{ env.workflow }}"
+          title: "Update #${{ env.workflow }}"
           automatic_release_tag: release-${{ env.workflow }}
           repo_token: "${{ secrets.TOKEN }}"
           files: build/libs/*.jar
@@ -70,3 +67,11 @@ jobs:
           repo_token: "${{ secrets.TOKEN }}"
           files: build/libs/*.jar
           prerelease: false
+
+      - name: Push to API
+      continue-on-error: true
+      if: "!contains(github.event.commits[0].message, '[release-skip]')"
+      env:
+        secret: ${{ secrets.API_PUSH_TOKEN }}
+        tag: ${{ env.tag }}
+      run: sh scripts/PushToAPI.sh
