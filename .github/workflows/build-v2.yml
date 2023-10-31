@@ -1,4 +1,4 @@
-name: Build Nanaica v2
+name: Build
 on:
   workflow_dispatch:
   pull_request:
@@ -22,7 +22,14 @@ jobs:
       - name: Apply Patches
         run: ./gradlew applyPatches --no-daemon --stacktrace
       - name: Build
-        run: ./gradlew createReobfPaperclipJar --no-daemon --stacktrace
+        run: ./gradlew createNanaicaServer --no-daemon --stacktrace
+      - name: Rebuild on Failure
+        if: ${{ failure() }}
+        run: |
+          ./gradlew clean cleanCache
+          ./gradlew applyPatches --no-daemon --stacktrace 
+          ./gradlew createNanaicaServer --no-daemon --stacktrace
+          ./gradlew generateDevelopmentBundle --no-daemon --stacktrace
       - name: Set Commit Hash
         id: set_commit_hash
         run: echo "COMMIT_HASH=$(git log --format='%H' -n 1)" >> $GITHUB_ENV
@@ -31,6 +38,6 @@ jobs:
         with:
           name: Build ${{ github.run_number }}
           tag_name: ${{ github.run_number }}
-          body: "[\"artifact_name\"=nanaica.jar]/[\"changes\"=${{ github.event.head_commit.message }}]/[\"commit_hash\"=${{ env.COMMIT_HASH }}]/[\"version\"=MC1.20.2]"
+          body: "[\"artifact_name\"=nanaica-launcher.jar]/[\"changes\"=${{ github.event.head_commit.message }}]/[\"commit_hash\"=${{ env.COMMIT_HASH }}]/[\"version\"=MC1.20.2]"
           token: ${{ secrets.TOKEN }}
           files: target/*.jar
